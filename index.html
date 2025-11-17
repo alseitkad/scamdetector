@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MLPM Message Classifier</title>
+  <style>
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #f4f7fb;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #4a90ff;
+      padding: 1rem 2rem;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .layout {
+      display: flex;
+      flex: 1;
+      gap: 1.5rem;
+      padding: 1.5rem;
+    }
+
+    .input-panel, .output-panel {
+      flex: 1;
+      background: white;
+      border-radius: 20px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+    }
+
+    textarea {
+      width: 100%;
+      height: 260px;
+      padding: 1rem;
+      border-radius: 14px;
+      border: 1.5px solid #c9d7f0;
+      background: #f8fbff;
+      resize: none;
+      font-size: 16px;
+      transition: 0.3s;
+    }
+
+    textarea:focus {
+      border-color: #4a90ff;
+      background: #fff;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(74,144,255,0.2);
+    }
+
+    button {
+      margin-top: 1rem;
+      padding: 0.85rem 2rem;
+      background: #4a90ff;
+      border: none;
+      color: white;
+      border-radius: 12px;
+      font-size: 17px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.25s;
+      box-shadow: 0 4px 12px rgba(74,144,255,0.3);
+      align-self: flex-start;
+    }
+
+    button:hover {
+      background: #2f78e6;
+      box-shadow: 0 6px 18px rgba(47,120,230,0.35);
+    }
+
+    .output-panel h2 {
+      margin-top: 0;
+      color: #1a2b4c;
+    }
+
+    .result {
+      margin-top: 1rem;
+      padding: 1.2rem;
+      border-radius: 14px;
+      background: #eef5ff;
+      color: #1a2b4c;
+      border-left: 5px solid #4a90ff;
+      font-size: 15px;
+      line-height: 1.6rem;
+      display: none;
+    }
+
+    .error {
+      background: #ffeaea;
+      border-left: 5px solid #ff4a4a;
+      color: #8b1e1e;
+    }
+  </style>
+</head>
+<body>
+  <header>💬 MLPM Message Classifier</header>
+
+  <div class="layout">
+    <div class="input-panel">
+      <h2>Enter Message</h2>
+      <textarea id="message" placeholder="Type or paste a message..."></textarea>
+      <button onclick="sendMessage()">Analyze</button>
+    </div>
+
+    <div class="output-panel">
+      <h2>Result</h2>
+      <div id="result" class="result"></div>
+    </div>
+  </div>
+
+  <script>
+    async function sendMessage() {
+      const message = document.getElementById("message").value.trim();
+      const resultBox = document.getElementById("result");
+
+      if (!message) {
+        resultBox.style.display = "block";
+        resultBox.className = "result error";
+        resultBox.innerText = "⚠️ Please enter a message.";
+        return;
+      }
+
+      resultBox.style.display = "block";
+      resultBox.className = "result";
+      resultBox.innerText = "⏳ Analyzing...";
+
+      try {
+        const response = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          resultBox.className = "result error";
+          resultBox.innerText = "❌ Error: " + data.message;
+        } else {
+          resultBox.className = "result";
+          resultBox.innerHTML = `
+            <strong>Prediction:</strong> ${data.prediction} <br>
+            <strong>Confidence:</strong> ${data.confidence}% <br><br>
+            <em>Processed text:</em><br>${data.text}
+          `;
+        }
+      } catch (err) {
+        resultBox.className = "result error";
+        resultBox.innerText = "❌ Failed to connect to the API.";
+      }
+    }
+  </script>
+</body>
+</html>
